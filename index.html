@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="format-detection" content="telephone=no">
+  <meta name="wago-version" content="4">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6945a7">
   <meta name="mobile-web-app-capable" content="yes">
@@ -252,9 +253,63 @@
       100% { transform: scale(1); }
     }
     .caption {
-      margin-top: 8px;
+      margin-top: 6px;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 15px;
+      color: #ffe18a;
+    }
+    .ba { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 8px; }
+    .ba-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-height: 44px;
+    }
+    .ba-lab {
+      flex: none;
+      width: 3.6em;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #e1cbff;
+    }
+    .ba-unit {
+      font-weight: 800;
+      font-size: 18px;
+      color: #ffe18a;
+    }
+    .ba-row.bylo .tile {
+      font-size: clamp(22px, 6.5vw, 34px);
+      background: #5a476e;
+      color: #fff7df;
+    }
+    .ba-row.bylo .comma { font-size: clamp(22px, 6.5vw, 34px); color: #e1cbff; }
+    .ba-row.bylo .tile.gone, .ba-row.bylo .comma.gone { opacity: 0.35; text-decoration: line-through; }
+    .ba-row.jest .tile { font-size: clamp(28px, 8.5vw, 46px); }
+    .ba-row.jest .comma { font-size: clamp(28px, 8.5vw, 46px); }
+    .steplist {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #eee2fa;
+    }
+    .steplist li {
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      margin-bottom: 4px;
+      animation: stepin 0.35s both;
+      line-height: 1.3;
+    }
+    .steplist li.current { background: rgba(213, 245, 139, 0.22); color: #fff; }
+    .steplist .why { color: #ffe18a; font-weight: 650; }
+    @keyframes stepin {
+      0% { transform: translateY(8px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
     }
     .ladder { background: #fff5cc; }
     .ladder .badge { background: #ffe481; }
@@ -344,9 +399,26 @@
         right: 10px;
         bottom: 10px;
         z-index: 40;
-        min-height: 36vh;
+        min-height: 0;
+        max-height: 74vh;
         margin: 0;
         box-shadow: 0 8px 0 #1c1028;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .stage.is-playing #play {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        flex: 1;
+      }
+      .stage.is-playing .steplist {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 26vh;
       }
       body.playing .backdrop { display: block; }
 
@@ -486,8 +558,22 @@
               <small id="invite">Wpisz liczbę i naciśnij „Pokaż”.</small>
             </div>
           </div>
-          <div id="digits" class="digits" hidden></div>
-          <p class="caption" id="caption" role="status"></p>
+          <div id="play" hidden>
+            <div class="ba">
+              <div class="ba-row bylo">
+                <span class="ba-lab">Było</span>
+                <div id="wasDigits" class="digits"></div>
+                <span id="wasUnit" class="ba-unit"></span>
+              </div>
+              <div class="ba-row jest">
+                <span class="ba-lab">Jest</span>
+                <div id="nowDigits" class="digits"></div>
+                <span id="nowUnit" class="ba-unit"></span>
+              </div>
+            </div>
+            <p class="caption" id="caption" role="status"></p>
+            <ol id="steps" class="steplist" aria-label="Kroki przeliczania"></ol>
+          </div>
         </section>
       </div>
 
@@ -720,9 +806,14 @@
       finishFn = null;
       $('skip').className = '';
       $('skip').textContent = 'Pomiń';
-      $('digits').hidden = true;
+      $('play').hidden = true;
       $('idle').hidden = false;
       $('caption').textContent = '';
+      $('wasUnit').textContent = '';
+      $('nowUnit').textContent = '';
+      clearEl($('wasDigits'));
+      clearEl($('nowDigits'));
+      clearEl($('steps'));
       setPlaying(false);
     }
 
@@ -808,53 +899,128 @@
       return mark;
     }
 
-    function paintDigits(s, prev) {
-      var box = $('digits');
-      var fresh = freshIndices(s, prev);
+    function goneIndices(was, now) {
+      var mark = {}, i;
+      if (!was || !now || was === now) return mark;
+      if (clean(was) === now) {
+        for (i = 0; i < was.length; i++) {
+          if (i >= now.length || was.charAt(i) !== now.charAt(i)) mark[i] = true;
+        }
+      }
+      return mark;
+    }
+
+    function paintInto(box, s, flags) {
       var i, c, el;
       clearEl(box);
+      flags = flags || {};
       for (i = 0; i < s.length; i++) {
         c = s.charAt(i);
         el = document.createElement('span');
         el.className = c === ',' ? 'comma' : 'tile';
-        if (fresh[i]) {
+        if (flags.fresh && flags.fresh[i]) {
           el.className += ' pop';
           if (c === '0') el.className += ' fresh';
         }
+        if (flags.gone && flags.gone[i]) el.className += ' gone';
         el.appendChild(document.createTextNode(c));
         box.appendChild(el);
       }
     }
 
-    function stepCaption(seq, i, v, a, b, prev, s) {
-      if (i === 0) return tip(v, a, b);
-      if (i > 0 && s === clean(seq[i - 1]) && seq[i - 1] !== s) return 'Zbędne zera znikają.';
-      if (s.indexOf('0,') === 0 && prev.indexOf('0,') !== 0) return 'Przed liczbą stawiamy zero i przecinek.';
-      if (fracLeadZeros(s) > fracLeadZeros(prev)) return 'Zero wskakuje po przecinku, przed cyframi.';
-      if (POWERS[a] > POWERS[b] && s.length > prev.length && s.charAt(s.length - 1) === '0' && String(v).indexOf(',') === -1) {
-        return 'Dopisujemy zero.';
+    function stepReason(was, now, toSmaller) {
+      if (clean(was) === now && was !== now) return 'zbędne zera znikają';
+      var wp = String(was).split(',');
+      var wLeft = wp[0];
+      var wRight = wp.length > 1 ? wp[1] : '';
+      if (!toSmaller) {
+        var moved = wLeft.slice(-1);
+        var newLeft = wLeft.slice(0, -1);
+        if (!newLeft) {
+          if (moved === '0' && wRight) return 'dopisujemy 0 po przecinku';
+          return 'stawiamy 0 i przecinek z przodu';
+        }
+        return 'przecinek o 1 miejsce w lewo';
       }
-      if (POWERS[a] > POWERS[b] && s.length > String(prev).replace(',', '').length) return 'Dopisujemy zero.';
-      return 'Przecinek skacze w ' + (POWERS[a] > POWERS[b] ? 'prawo' : 'lewo') + ' · krok ' + i;
+      if (now.replace(',', '').length > was.replace(',', '').length && now.charAt(now.length - 1) === '0') {
+        return 'dopisujemy 0';
+      }
+      return 'przecinek o 1 miejsce w prawo';
+    }
+
+    function describePath(v, a, b) {
+      var seq = frames(v, a, b);
+      var toSmaller = POWERS[a] > POWERS[b];
+      var out = [];
+      var i, last;
+      for (i = 0; i < seq.length - 1; i++) {
+        last = i === seq.length - 2;
+        out.push({
+          n: i + 1,
+          was: seq[i],
+          now: seq[i + 1],
+          reason: stepReason(seq[i], seq[i + 1], toSmaller),
+          wasUnit: i === 0 ? a : '',
+          nowUnit: last ? b : ''
+        });
+      }
+      return out;
     }
 
     function animate(v, a, b, done, endPhrase) {
       resetStage();
+      var path = describePath(v, a, b);
       var seq = frames(v, a, b);
+      var res = lastOf(seq);
       var i = 0;
-      var prev = '';
       $('idle').hidden = true;
-      $('digits').hidden = false;
+      $('play').hidden = false;
       $('skip').className = 'is-on';
       $('skip').textContent = 'Pomiń';
       setPlaying(true);
       markLadder(a, b);
       blurActive();
 
-      function showFinal() {
+      function showPair(step, doPop) {
+        paintInto($('wasDigits'), step.was, { gone: goneIndices(step.was, step.now) });
+        paintInto($('nowDigits'), step.now, doPop ? { fresh: freshIndices(step.now, step.was) } : {});
+        $('wasUnit').textContent = step.wasUnit || '';
+        $('nowUnit').textContent = step.nowUnit || '';
+        $('caption').textContent = step.reason.charAt(0).toUpperCase() + step.reason.slice(1) + '.';
+      }
+
+      function addHistory(step, current) {
+        var lis = $('steps').getElementsByTagName('li');
+        var k, li, why;
+        for (k = 0; k < lis.length; k++) {
+          lis[k].className = lis[k].className.replace(/\bcurrent\b/g, '').replace(/\s+/g, ' ');
+        }
+        li = document.createElement('li');
+        if (current) li.className = 'current';
+        li.setAttribute('data-step', String(step.n));
+        li.appendChild(document.createTextNode('Krok ' + step.n + ': ' + step.was + ' → ' + step.now + (step.nowUnit ? ' ' + step.nowUnit : '')));
+        if (step.reason) {
+          why = document.createElement('span');
+          why.className = 'why';
+          why.appendChild(document.createTextNode('  (' + step.reason + ')'));
+          li.appendChild(why);
+        }
+        $('steps').appendChild(li);
+        try { li.scrollIntoView({ block: 'nearest' }); } catch (eS) {}
+      }
+
+      function fillAllHistory() {
+        var k;
+        clearEl($('steps'));
+        for (k = 0; k < path.length; k++) addHistory(path[k], k === path.length - 1);
+      }
+
+      function finish() {
         if (timer) { clearTimeout(timer); timer = null; }
-        var res = lastOf(seq);
-        paintDigits(res, prev);
+        if (path.length) {
+          showPair(path[path.length - 1], false);
+          if ($('steps').children.length < path.length) fillAllHistory();
+        }
         $('caption').textContent = res + ' ' + b + '  ·  ' + (endPhrase || 'Brawo!');
         if ($('live') && !$('calculator').hidden) $('live').textContent = res + ' ' + b;
         $('skip').textContent = 'Zamknij';
@@ -863,22 +1029,27 @@
         if (done) done(res);
       }
 
-      finishFn = showFinal;
+      finishFn = finish;
 
       function step() {
-        var s = seq[i];
-        paintDigits(s, prev);
-        $('caption').textContent = stepCaption(seq, i, v, a, b, prev, s);
-        prev = s;
+        var st = path[i];
+        showPair(st, !reducedMotion);
+        addHistory(st, true);
         i += 1;
-        if (i >= seq.length) {
-          timer = setTimeout(showFinal, reducedMotion ? 0 : 650);
+        if (i >= path.length) {
+          timer = setTimeout(finish, reducedMotion ? 0 : 850);
         } else {
-          timer = setTimeout(step, reducedMotion ? 0 : 650);
+          timer = setTimeout(step, reducedMotion ? 0 : 900);
         }
       }
 
-      step();
+      if (!path.length) {
+        paintInto($('nowDigits'), res, {});
+        $('nowUnit').textContent = b;
+        finish();
+      } else {
+        step();
+      }
       try {
         $('stage').scrollIntoView({ block: 'center' });
       } catch (e4) {
@@ -1079,8 +1250,11 @@
       makeOptions: makeOptions,
       buildQuestion: buildQuestion,
       tip: tip,
+      stepReason: stepReason,
+      describePath: describePath,
       BANK: BANK,
-      POWERS: POWERS
+      POWERS: POWERS,
+      version: '4'
     };
   })();
   </script>
