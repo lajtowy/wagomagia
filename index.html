@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="format-detection" content="telephone=no">
-  <meta name="wago-version" content="4">
+  <meta name="wago-version" content="5">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6945a7">
   <meta name="mobile-web-app-capable" content="yes">
@@ -360,18 +360,28 @@
       align-items: center;
       justify-content: center;
     }
-    .options .opt-unit {
-      display: block;
-      font-size: 13px;
-      letter-spacing: 0.04em;
-      text-transform: none;
-      font-weight: 800;
-      color: #5a4a6e;
-      margin-top: 2px;
-    }
     .options button.correct { background: #d5f58b; box-shadow: 0 3px var(--ink); }
     .options button.wrong { background: #ffb4c8; box-shadow: 0 3px var(--ink); }
     .options button:disabled { transform: none; }
+    .options button.text-option { font-size: clamp(16px, 4.5vw, 20px); }
+    .quiz-rules {
+      background: #fff5cc;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 14px;
+      font-weight: 750;
+    }
+    .explanation {
+      background: #fff5cc;
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+    .explanation p + p { margin-top: 6px; }
+    .explanation .quiz-rules { padding: 0; color: #563581; }
     .msg { margin-top: 8px; font-weight: 750; min-height: 1.3em; }
     .quiz-foot { min-height: 96px; flex: none; }
     #next, #again { width: 100%; margin-top: 8px; }
@@ -407,18 +417,10 @@
         flex-direction: column;
         overflow: hidden;
       }
-      .stage.is-playing #play {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        flex: 1;
-      }
-      .stage.is-playing .steplist {
+      .stage.is-playing .stage-body {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        flex: 1 1 auto;
         min-height: 0;
-        max-height: 26vh;
       }
       body.playing .backdrop { display: block; }
 
@@ -428,6 +430,7 @@
       body.mode-quiz #stage:not(.is-playing) { display: none; }
       body.mode-quiz .wrap {
         padding: 8px 10px 8px;
+        min-height: 100vh;
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
@@ -449,7 +452,7 @@
       }
       body.mode-quiz .heading { margin-bottom: 6px; }
       body.mode-quiz h2 { font-size: 18px; }
-      body.mode-quiz .task { font-size: 24px; margin: 6px 0 8px; }
+      body.mode-quiz .task { font-size: 22px; margin: 6px 0 8px; }
       body.mode-quiz .options {
         flex: 1;
         min-height: 0;
@@ -528,12 +531,13 @@
               <span id="stars">⭐ 0</span>
               <span id="progress">Zadanie 1/10</span>
             </div>
+            <p class="quiz-rules">1 kg = 100 dag = 1000 g · 1 dag = 10 g</p>
             <p class="task" id="question"></p>
             <div class="options" id="options" role="group" aria-label="Wybierz odpowiedź">
-              <button type="button" data-i="0"><span class="opt-num"></span><span class="opt-unit"></span></button>
-              <button type="button" data-i="1"><span class="opt-num"></span><span class="opt-unit"></span></button>
-              <button type="button" data-i="2"><span class="opt-num"></span><span class="opt-unit"></span></button>
-              <button type="button" data-i="3"><span class="opt-num"></span><span class="opt-unit"></span></button>
+              <button type="button" data-i="0"></button>
+              <button type="button" data-i="1"></button>
+              <button type="button" data-i="2"></button>
+              <button type="button" data-i="3"></button>
             </div>
             <div class="quiz-foot">
             <p class="msg" id="feedback" role="status"></p>
@@ -550,6 +554,12 @@
           <div class="stagehead">
             <span class="label">✦ Scena cyfr</span>
             <button type="button" id="skip">Pomiń</button>
+          </div>
+          <div class="stage-body" id="stageBody">
+          <div class="explanation" id="explanation" hidden>
+            <p id="whyChoice"></p>
+            <p id="whyCorrect"></p>
+            <p class="quiz-rules">1 kg = 100 dag = 1000 g · 1 dag = 10 g</p>
           </div>
           <div id="idle" class="empty">
             <span class="spark">✧</span>
@@ -573,6 +583,7 @@
             </div>
             <p class="caption" id="caption" role="status"></p>
             <ol id="steps" class="steplist" aria-label="Kroki przeliczania"></ol>
+          </div>
           </div>
         </section>
       </div>
@@ -626,8 +637,38 @@
       ['3,5', 'dag', 'g'], ['0,2', 'dag', 'g'], ['7', 'dag', 'g'], ['0,05', 'dag', 'g'],
       ['7', 'g', 'dag'], ['5', 'g', 'dag'], ['3', 'g', 'dag'], ['125', 'g', 'dag'],
       ['40', 'g', 'dag'], ['8', 'g', 'dag'], ['15', 'g', 'dag'], ['2', 'g', 'dag'],
-      ['250', 'g', 'dag'], ['4', 'g', 'dag'], ['9', 'g', 'dag'], ['35', 'g', 'dag']
+      ['250', 'g', 'dag'], ['4', 'g', 'dag'], ['9', 'g', 'dag'], ['35', 'g', 'dag'],
+      ['3000', 'g', 'kg'], ['1500', 'g', 'kg'], ['4000', 'g', 'kg'], ['1010', 'g', 'kg'],
+      ['0,009', 'kg', 'g'], ['4,02', 'kg', 'g'], ['2,5', 'kg', 'dag'], ['1,04', 'kg', 'dag'],
+      ['120', 'dag', 'kg'], ['300', 'dag', 'kg'], ['1,05', 'dag', 'g'], ['120', 'g', 'dag']
     ];
+    var BANKS = {
+      convert: BANK,
+      mixed: [
+        { type: 'mixed', parts: [['1', 'kg'], ['25', 'dag']], to: 'g' },
+        { type: 'mixed', parts: [['2', 'kg'], ['5', 'dag']], to: 'g' },
+        { type: 'mixed', parts: [['3', 'kg'], ['40', 'dag']], to: 'dag' },
+        { type: 'mixed', parts: [['1', 'kg'], ['5', 'g']], to: 'g' },
+        { type: 'mixed', parts: [['0,5', 'kg'], ['20', 'dag']], to: 'g' },
+        { type: 'mixed', parts: [['5', 'dag'], ['8', 'g']], to: 'g' }
+      ],
+      compare: [
+        { type: 'compare', parts: [['2', 'kg'], ['150', 'dag']] },
+        { type: 'compare', parts: [['800', 'g'], ['1', 'kg']] },
+        { type: 'compare', parts: [['30', 'dag'], ['250', 'g']] },
+        { type: 'compare', parts: [['0,5', 'kg'], ['40', 'dag']] },
+        { type: 'compare', parts: [['1', 'kg'], ['1000', 'g']] },
+        { type: 'compare', parts: [['60', 'dag'], ['750', 'g']] }
+      ],
+      story: [
+        { type: 'story', question: 'Mama kupiła 1,5 kg jabłek. Ile to gramów?', parts: [['1,5', 'kg']], to: 'g' },
+        { type: 'story', question: 'Chleb waży 40 dag. Ile to gramów?', parts: [['40', 'dag']], to: 'g' },
+        { type: 'story', question: 'Tomek kupił 250 g sera i 1 dag przyprawy. Ile to razem gramów?', parts: [['250', 'g'], ['1', 'dag']], to: 'g' },
+        { type: 'story', question: 'W plecaku jest 2 kg książek i 30 dag drugiego śniadania. Ile to gramów?', parts: [['2', 'kg'], ['30', 'dag']], to: 'g' },
+        { type: 'story', question: 'Tata kupił 500 g truskawek. Ile to kilogramów?', parts: [['500', 'g']], to: 'kg' }
+      ]
+    };
+    var TYPES = Object.keys(BANKS);
 
     try {
       reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -649,7 +690,7 @@
     }
 
     function parse(s) {
-      s = String(s || '').replace(/\s/g, '').replace(/\./g, ',');
+      s = String(s == null ? '' : s).replace(/\s/g, '').replace(/\./g, ',');
       if (!/^(?:\d+(?:,\d*)?|,\d+)$/.test(s)) return null;
       return clean(s.replace(/^,/, '0,'));
     }
@@ -706,16 +747,6 @@
       return head + 'przesuń przecinek o ' + n + (n === 1 ? ' miejsce' : ' miejsca') + ' w ' + (d > 0 ? 'prawo' : 'lewo');
     }
 
-    function kidSized(s) {
-      if (!s) return false;
-      var raw = String(s).replace(',', '');
-      if (raw.length > 6) return false;
-      var parts = String(s).split(',');
-      if (parts[1] && parts[1].length > 4) return false;
-      if (s === '0') return false;
-      return true;
-    }
-
     function shuffle(arr) {
       var a = arr.slice();
       var i, j, t;
@@ -726,57 +757,135 @@
       return a;
     }
 
-    function pushUniq(list, v, correct) {
-      var p = parse(String(v));
-      var i;
-      if (p == null || p === correct || !kidSized(p)) return;
-      for (i = 0; i < list.length; i++) if (list[i] === p) return;
-      list.push(p);
+    function addMistake(q, option, reason) {
+      if (option === q.correct || q.options.indexOf(option) !== -1) return;
+      q.options.push(option);
+      q.explainWrong[option] = 'Wybrana odpowiedź: „' + optionLabel(q, option) + '” — ' + reason + '.';
+    }
+
+    function optionLabel(q, option) {
+      return q.to ? option + ' ' + q.to : option;
+    }
+
+    function placeCount(n) {
+      return n + (n === 1 ? ' miejsce' : ' miejsca');
+    }
+
+    function directions(n) { return n > 0 ? 'w prawo' : 'w lewo'; }
+
+    function unitRule(a, b) {
+      var d = POWERS[a] - POWERS[b];
+      return '1 ' + (d > 0 ? a : b) + ' = ' + convertPlaces('1', Math.abs(d)) + ' ' + (d > 0 ? b : a);
+    }
+
+    function explainConversion(v, a, b, result) {
+      var path = frames(v, a, b);
+      var n = POWERS[a] - POWERS[b];
+      var method = n > 0 && v.indexOf(',') === -1
+        ? 'Dopisz ' + n + (n === 1 ? ' zero' : ' zera')
+        : 'Przesuń przecinek o ' + placeCount(Math.abs(n)) + ' ' + directions(n);
+      return method + ': ' + path.join(' → ') + ' ' + b + '. ' +
+        v + ' ' + a + ' to ' + result + ' ' + b + ', bo ' + unitRule(a, b) + '.';
     }
 
     function makeOptions(value, a, b) {
-      var correct = lastOf(frames(value, a, b));
       var n = POWERS[a] - POWERS[b];
-      var cands = [];
-      var shifts = [n - 1, n + 1, n - 2, n + 2, -n, n > 0 ? 2 : -2, n > 0 ? 1 : -1, n > 0 ? 3 : -3, n > 0 ? 4 : -4];
-      var i, ch;
-      for (i = 0; i < shifts.length; i++) {
-        if (shifts[i] !== 0 && shifts[i] !== n) pushUniq(cands, convertPlaces(value, shifts[i]), correct);
+      var correct = convertPlaces(value, n);
+      var q = { type: 'convert', question: value + ' ' + a + ' = ? ' + b, value: value,
+        from: a, to: b, correct: correct, options: [correct], explainWrong: {} };
+      q.explainCorrect = explainConversion(value, a, b, correct);
+      var toward = n > 0 ? 1 : -1;
+      var shifts = [n - toward, n + toward, 0, -n, n - 2 * toward];
+      var i, shift, reason;
+      for (i = 0; i < shifts.length && q.options.length < 4; i++) {
+        shift = shifts[i];
+        if (!shift) reason = 'liczba została bez zmiany, choć jednostka się zmieniła';
+        else if (shift * n < 0) reason = 'przecinek powędrował w przeciwną stronę';
+        else reason = 'przecinek przesunął się o ' + placeCount(Math.abs(shift)) +
+          ' zamiast o ' + placeCount(Math.abs(n));
+        addMistake(q, convertPlaces(value, shift), reason);
       }
-      pushUniq(cands, convertPlaces(correct, 1), correct);
-      pushUniq(cands, convertPlaces(correct, -1), correct);
-      pushUniq(cands, convertPlaces(correct, 2), correct);
-      pushUniq(cands, convertPlaces(correct, -2), correct);
-      pushUniq(cands, convertPlaces(correct, 3), correct);
-      pushUniq(cands, convertPlaces(correct, -3), correct);
-      pushUniq(cands, String(correct).replace(',', ''), correct);
-      pushUniq(cands, correct + '0', correct);
-      pushUniq(cands, value, correct);
-      if (correct.indexOf('0,') === 0) {
-        pushUniq(cands, clean(correct.slice(2)), correct);
-        ch = correct.slice(2);
-        if (ch.charAt(0) === '0') pushUniq(cands, '0,' + ch.slice(1), correct);
-      }
-      if (cands.length < 3) {
-        pushUniq(cands, convertPlaces(value, n + 3), correct);
-        pushUniq(cands, convertPlaces(value, n - 3), correct);
-        pushUniq(cands, '10', correct);
-        pushUniq(cands, '100', correct);
-        pushUniq(cands, '0,1', correct);
-        pushUniq(cands, '0,01', correct);
-        pushUniq(cands, '0,001', correct);
-      }
-      if (cands.length < 3) return null;
-      var picked = shuffle(cands).slice(0, 3);
-      var opts = shuffle(picked.concat([correct]));
-      return { value: value, from: a, to: b, correct: correct, options: opts };
+      q.options = shuffle(q.options);
+      return q;
+    }
+
+    function amount(part) { return part[0] + ' ' + part[1]; }
+
+    function sameUnit(part, to) { return convertPlaces(part[0], POWERS[part[1]] - POWERS[to]); }
+
+    function grams(part) { return Number(sameUnit(part, 'g').replace(',', '.')); }
+
+    function equation(part, value, to) {
+      return amount(part) + (part[1] === to ? '' : ' = ' + value + ' ' + to);
+    }
+
+    function compareQuestion(item) {
+      var a = item.parts[0], b = item.parts[1];
+      var left = amount(a), right = amount(b);
+      var to = POWERS[a[1]] < POWERS[b[1]] ? a[1] : b[1];
+      var x = sameUnit(a, to), y = sameUnit(b, to), ga = grams(a), gb = grams(b);
+      var equal = 'Ważą tyle samo', both = 'Obie razem';
+      var correct = ga === gb ? equal : ga > gb ? left : right;
+      var converted = a[1] === to ? b : a;
+      var q = { type: 'compare', question: 'Które jest cięższe: ' + left + ' czy ' + right + '?',
+        correct: correct, options: [correct], explainWrong: {} };
+      q.explainCorrect = equation(converted, sameUnit(converted, to), to) + ', bo ' + unitRule(a[1], b[1]) + '. ' +
+        x + ' ' + to + (ga === gb ? ' = ' : ga > gb ? ' > ' : ' < ') + y + ' ' + to +
+        (ga === gb ? ', więc obie masy są równe.' : ', więc ' + correct + ' to większa masa.');
+      var rawA = Number(a[0].replace(',', '.')), rawB = Number(b[0].replace(',', '.'));
+      var rawMistake = 'sama większa liczba nie oznacza większej masy, gdy jednostki są różne';
+      var smallerMistake = 'po zamianie na tę samą jednostkę ta masa okazuje się mniejsza';
+      var equalMistake = 'ta masa nie jest cięższa, bo obie są równe';
+      addMistake(q, left, ga === gb ? equalMistake : rawA > rawB ? rawMistake : smallerMistake);
+      addMistake(q, right, ga === gb ? equalMistake : rawB > rawA ? rawMistake : smallerMistake);
+      addMistake(q, equal, 'po zamianie na tę samą jednostkę liczby nie są równe');
+      addMistake(q, both, 'szukamy cięższej rzeczy, a nie ich wspólnej masy');
+      return q;
+    }
+
+    function sumQuestion(item) {
+      var a = item.parts[0], b = item.parts[1], to = item.to;
+      var x = sameUnit(a, to), y = sameUnit(b, to);
+      // Compound items in the bank use whole grams and whole target units.
+      var sum = Number(x) + Number(y);
+      var q = { type: item.type, question: item.question || amount(a) + ' ' + amount(b) + ' = ? ' + to,
+        to: to, correct: String(sum), options: [String(sum)], explainWrong: {},
+        conversions: item.parts.filter(function (part) { return part[1] !== to; }) };
+      q.value = q.conversions[0][0];
+      q.from = q.conversions[0][1];
+      var method = q.conversions.map(function (part) {
+        return tip(part[0], part[1], to);
+      }).join('; ');
+      q.explainCorrect = 'Zamień jednostki (' + method + '): ' +
+        equation(a, x, to) + ', a ' + equation(b, y, to) + '. ' +
+        'Teraz dodaj: ' + x + ' ' + to + ' + ' + y + ' ' + to + ' = ' + sum + ' ' + to + '.';
+      addMistake(q, x, 'w wyniku jest tylko pierwsza masa');
+      addMistake(q, y, 'w wyniku jest tylko druga masa');
+      var part = q.conversions[0], shift = POWERS[part[1]] - POWERS[to];
+      var moved = Number(convertPlaces(part[0], shift - 1).replace(',', '.'));
+      var other = part === a ? Number(y) : Number(x);
+      addMistake(q, String(moved + other).replace('.', ','), 'przy zamianie ' + amount(part) + ' zabrakło jednego przesunięcia przecinka w prawo');
+      return q;
     }
 
     function buildQuestion(item) {
-      var q = makeOptions(item[0], item[1], item[2]);
-      if (!q) return null;
+      if (!item.type) return makeOptions(item[0], item[1], item[2]);
+      var q;
+      if (item.type === 'compare') q = compareQuestion(item);
+      else if (item.parts.length === 2) q = sumQuestion(item);
+      else {
+        q = makeOptions(item.parts[0][0], item.parts[0][1], item.to);
+        q.type = item.type;
+        q.question = item.question;
+        return q;
+      }
+      q.options = shuffle(q.options);
       return q;
     }
+
+    function randomItem(items) { return items[Math.floor(Math.random() * items.length)]; }
+
+    function randomQuestion() { return buildQuestion(randomItem(BANKS[randomItem(TYPES)])); }
 
     function blurActive() {
       try {
@@ -813,6 +922,8 @@
       $('nowUnit').textContent = '';
       clearEl($('wasDigits'));
       clearEl($('nowDigits'));
+      $('explanation').hidden = true;
+      $('stageBody').scrollTop = 0;
       clearEl($('steps'));
       setPlaying(false);
     }
@@ -967,11 +1078,18 @@
       return out;
     }
 
-    function animate(v, a, b, done, endPhrase) {
+    function animate(v, a, b, endPhrase, q, choice) {
       resetStage();
-      var path = describePath(v, a, b);
-      var seq = frames(v, a, b);
-      var res = lastOf(seq);
+      var conversions = q && q.conversions ? q.conversions : [[v, a]];
+      var path = [];
+      conversions.forEach(function (part) {
+        describePath(part[0], part[1], b).forEach(function (move) {
+          move.n = path.length + 1;
+          path.push(move);
+        });
+      });
+      var res = q ? q.correct : convertPlaces(v, POWERS[a] - POWERS[b]);
+      if (q) showExplanation(q, choice);
       var i = 0;
       $('idle').hidden = true;
       $('play').hidden = false;
@@ -998,7 +1116,7 @@
         li = document.createElement('li');
         if (current) li.className = 'current';
         li.setAttribute('data-step', String(step.n));
-        li.appendChild(document.createTextNode('Krok ' + step.n + ': ' + step.was + ' → ' + step.now + (step.nowUnit ? ' ' + step.nowUnit : '')));
+        li.appendChild(document.createTextNode('Krok ' + step.n + ': ' + step.was + (step.wasUnit ? ' ' + step.wasUnit : '') + ' → ' + step.now + (step.nowUnit ? ' ' + step.nowUnit : '')));
         if (step.reason) {
           why = document.createElement('span');
           why.className = 'why';
@@ -1006,7 +1124,6 @@
           li.appendChild(why);
         }
         $('steps').appendChild(li);
-        try { li.scrollIntoView({ block: 'nearest' }); } catch (eS) {}
       }
 
       function fillAllHistory() {
@@ -1026,7 +1143,6 @@
         $('skip').textContent = 'Zamknij';
         $('skip').className = 'is-on';
         finishFn = null;
-        if (done) done(res);
       }
 
       finishFn = finish;
@@ -1050,10 +1166,13 @@
       } else {
         step();
       }
-      try {
-        $('stage').scrollIntoView({ block: 'center' });
-      } catch (e4) {
-        try { $('stage').scrollIntoView(true); } catch (e5) {}
+      revealStage(!!q);
+    }
+
+    function revealStage(quiz) {
+      if (quiz) $('skip').focus();
+      if (window.innerWidth >= 800) {
+        try { $('stage').scrollIntoView({ block: 'nearest' }); } catch (e) {}
       }
     }
 
@@ -1076,23 +1195,17 @@
         $('live').textContent = v + ' ' + dst;
         return false;
       }
-      animate(v, src, dst, null, 'Brawo!');
+      animate(v, src, dst, 'Brawo!');
       return false;
     }
 
     function startRound() {
-      var bag = shuffle(BANK);
       var list = [];
-      var i, q, key, used = {};
-      for (i = 0; i < bag.length && list.length < ROUND; i++) {
-        key = bag[i][0] + '|' + bag[i][1] + '|' + bag[i][2];
-        if (used[key]) continue;
-        q = buildQuestion(bag[i]);
-        if (!q) continue;
-        used[key] = true;
-        list.push(q);
-      }
-      roundQs = list;
+      TYPES.forEach(function (type) {
+        var count = type === 'convert' ? ROUND - 2 * (TYPES.length - 1) : 2;
+        list = list.concat(shuffle(BANKS[type]).slice(0, count).map(buildQuestion));
+      });
+      roundQs = shuffle(list);
       qIndex = 0;
       score = 0;
       showTask();
@@ -1100,15 +1213,11 @@
 
     function renderOptions(q, unlock) {
       var btns = $('options').getElementsByTagName('button');
-      var i, num, unit;
-      for (i = 0; i < 4; i++) {
-        num = btns[i].querySelector('.opt-num');
-        unit = btns[i].querySelector('.opt-unit');
-        num.textContent = q.options[i];
-        unit.textContent = q.to;
-        btns[i].className = '';
+      var i;
+      for (i = 0; i < btns.length; i++) {
+        btns[i].textContent = optionLabel(q, q.options[i]);
+        btns[i].className = q.to ? '' : 'text-option';
         btns[i].disabled = !unlock;
-        btns[i].setAttribute('aria-label', q.options[i] + ' ' + q.to);
       }
     }
 
@@ -1123,7 +1232,7 @@
       task = roundQs[qIndex];
       $('stars').textContent = '⭐ ' + score;
       $('progress').textContent = 'Zadanie ' + (qIndex + 1) + '/' + roundQs.length;
-      $('question').textContent = task.value + ' ' + task.from + '  =  ?  ' + task.to;
+      $('question').textContent = task.question;
       renderOptions(task, true);
       markLadder(task.from, task.to);
     }
@@ -1140,6 +1249,14 @@
       $('summaryText').textContent = 'Koniec! Masz ' + score + '/' + roundQs.length + ' gwiazdek.';
     }
 
+    function showExplanation(q, choice) {
+      var wrong = choice !== q.correct;
+      $('whyChoice').hidden = !wrong;
+      $('whyChoice').textContent = wrong ? q.explainWrong[choice] : '';
+      $('whyCorrect').textContent = q.explainCorrect;
+      $('explanation').hidden = false;
+    }
+
     function onPick(ev) {
       var btn = ev.currentTarget;
       var choice, i, btns, ok;
@@ -1149,18 +1266,16 @@
       btns = $('options').getElementsByTagName('button');
       for (i = 0; i < btns.length; i++) {
         btns[i].disabled = true;
-        if (task.options[i] === task.correct) btns[i].className = 'correct';
+        if (task.options[i] === task.correct) btns[i].classList.add('correct');
       }
       ok = choice === task.correct;
       if (ok) {
         score += 1;
         $('stars').textContent = '⭐ ' + score;
         $('feedback').textContent = 'Super! ⭐ Zobacz, jak to zrobić.';
-        animate(task.value, task.from, task.to, null, 'Super!');
       } else {
-        btn.className = 'wrong';
+        btn.classList.add('wrong');
         $('feedback').textContent = 'Prawie! Zobacz, jak to zrobić.';
-        animate(task.value, task.from, task.to, null, 'Tak się to robi!');
       }
       if (qIndex + 1 >= roundQs.length) {
         $('next').textContent = 'Zobacz wynik';
@@ -1168,6 +1283,17 @@
         $('next').textContent = 'Następne';
       }
       $('next').hidden = false;
+      if (task.type === 'compare') {
+        resetStage();
+        $('idle').hidden = true;
+        showExplanation(task, choice);
+        $('skip').className = 'is-on';
+        $('skip').textContent = 'Zamknij';
+        setPlaying(true);
+        revealStage(true);
+      } else {
+        animate(task.value, task.from, task.to, ok ? 'Super!' : 'Tak się to robi!', task, choice);
+      }
     }
 
     function onNext() {
@@ -1210,7 +1336,10 @@
 
     function closeSheet() {
       if (finishFn) finishFn();
-      else setPlaying(false);
+      else {
+        setPlaying(false);
+        if (!$('quiz').hidden) $('next').focus();
+      }
     }
 
     bindUnitGroup('from', function (u) { src = u; });
@@ -1253,8 +1382,10 @@
       stepReason: stepReason,
       describePath: describePath,
       BANK: BANK,
+      BANKS: BANKS,
+      randomQuestion: randomQuestion,
       POWERS: POWERS,
-      version: '4'
+      version: '5'
     };
   })();
   </script>
