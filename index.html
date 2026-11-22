@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6945a7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Wagomagia">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <title>Wagomagia — przeliczanie g, dag, kg</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --ink: #302043;
+      --plum: #6945a7;
+      --lime: #d5f58b;
+      --line: 2px solid var(--ink);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    html, body { margin: 0; }
+    body {
+      background: #f7f3fc;
+      background-image: radial-gradient(#e2d8ee 0.9px, transparent 0.9px);
+      background-size: 17px 17px;
+      padding-bottom: 24px;
+    }
+    button, input { font: inherit; color: inherit; }
+    button {
+      cursor: pointer;
+      font-weight: 800;
+      border: var(--line);
+      border-radius: 13px;
+      min-height: 48px;
+      background: #fff;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(105, 69, 167, 0.25);
+    }
+    button:active { transform: translateY(2px); }
+    :focus-visible { outline: 4px solid #ae55ca; outline-offset: 3px; }
+    h1, h2, p { margin: 0; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 16px 14px 40px; }
+    .noscript, .boot-error {
+      margin: 0 0 14px;
+      padding: 14px 16px;
+      background: #ffe08a;
+      border: var(--line);
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .boot-error { background: #ffb4b4; display: none; }
+    header.hero {
+      background: #d8c5fb;
+      border: var(--line);
+      border-radius: 20px;
+      box-shadow: 0 4px var(--ink);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .tag, .label {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+    .tag {
+      display: inline-block;
+      background: #fff4ca;
+      border: var(--line);
+      border-radius: 20px;
+      padding: 4px 10px;
+    }
+    h1 {
+      font-size: clamp(28px, 8vw, 52px);
+      letter-spacing: -0.06em;
+      line-height: 1.05;
+      margin: 4px 0 2px;
+    }
+    header.hero p { font-weight: 600; font-size: 14px; }
+    .mascot { font-size: 42px; line-height: 1; flex: none; }
+    nav.tabs {
+      display: flex;
+      gap: 6px;
+      border: var(--line);
+      padding: 5px;
+      background: #fff;
+      border-radius: 16px;
+      margin: 14px 0;
+      box-shadow: 0 3px var(--ink);
+    }
+    nav.tabs button {
+      flex: 1;
+      padding: 0 10px;
+      border-color: transparent;
+      background: transparent;
+    }
+    nav.tabs button[aria-pressed="true"] {
+      background: var(--plum);
+      color: #fff;
+      border-color: var(--ink);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .card {
+      border: var(--line);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 4px var(--ink);
+      overflow: hidden;
+    }
+    .controls, .ladder { padding: 16px; }
+    .heading { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    h2 { font-size: 22px; letter-spacing: -0.04em; }
+    .badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: var(--line);
+      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      background: #fbd6e9;
+      font-weight: 900;
+      font-size: 18px;
+      flex: none;
+    }
+    .label { display: block; margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%;
+      height: 56px;
+      border: var(--line);
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 28px;
+      font-weight: 800;
+      background: #faf7fd;
+      touch-action: manipulation;
+    }
+    input::placeholder { color: #776c83; font-weight: 700; }
+    .units {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: end;
+      margin: 12px 0;
+    }
+    .units .arrow { align-self: end; line-height: 48px; font-size: 18px; }
+    .choices { display: flex; gap: 4px; }
+    .choices button {
+      flex: 1;
+      min-width: 0;
+      padding: 0 4px;
+      background: #f5f0fa;
+    }
+    .choices button[aria-pressed="true"] {
+      background: #d6bafa;
+      box-shadow: 0 2px var(--ink);
+    }
+    .go {
+      width: 100%;
+      background: var(--lime);
+      box-shadow: 0 3px var(--ink);
+      font-size: 18px;
+    }
+    .hint {
+      margin: 12px 0 0;
+      background: #f5effc;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .live {
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: 900;
+      min-height: 1.2em;
+    }
+    .live:empty { display: none; }
+    .stage {
+      background-color: #392851;
+      background-image: radial-gradient(#5e4975 1px, transparent 1px);
+      background-size: 14px 14px;
+      color: #fff;
+      padding: 16px 16px 18px;
+      border: var(--line);
+      border-radius: 20px;
+      min-height: 150px;
+    }
+    .stage .label { color: #e1cbff; }
+    .stagehead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .stagehead button {
+      background: #ffe18a;
+      color: var(--ink);
+      min-height: 44px;
+      padding: 0 14px;
+      box-shadow: 0 2px #1c1028;
+      display: none;
+    }
+    .stagehead button.is-on { display: inline-block; }
+    .empty { display: flex; align-items: center; gap: 12px; min-height: 74px; }
+    .spark { font-size: 34px; color: #ffe596; }
+    .empty strong { display: block; font-size: 18px; }
+    .empty small { font-size: 14px; color: #eee2fa; }
+    .digits {
+      display: flex;
+      align-items: center;
+      min-height: 74px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .tile {
+      background: #fff7df;
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 2px 0.18em;
+      font-size: clamp(32px, 11vw, 56px);
+      font-weight: 900;
+      line-height: 1.1;
+    }
+    .tile.fresh { background: #d5f58b; }
+    .comma {
+      color: #ffe18a;
+      font-size: clamp(36px, 12vw, 58px);
+      font-weight: 900;
+      padding: 0 2px;
+    }
+    .pop { animation: pop 0.45s both; }
+    @keyframes pop {
+      0% { transform: scale(0.25); }
+      70% { transform: scale(1.13); }
+      100% { transform: scale(1); }
+    }
+    .caption {
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .ladder { background: #fff5cc; }
+    .ladder .badge { background: #ffe481; }
+    .rung { display: flex; align-items: center; gap: 12px; font-weight: 750; }
+    .rung strong {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 46px;
+      border: var(--line);
+      border-radius: 12px;
+      box-shadow: 0 2px var(--ink);
+      font-size: 24px;
+    }
+    .rung.is-active strong { outline: 3px solid #6945a7; outline-offset: 2px; }
+    .kg { background: #d3bcf5; }
+    .dag { background: #ffcade; }
+    .g { background: #d5f58b; }
+    .link { display: flex; align-items: center; gap: 10px; padding: 5px 0 5px 28px; font-size: 14px; font-weight: 750; }
+    .link b { font-size: 22px; }
+    .link span { color: #655534; }
+    .link.is-active { color: #5a2d9b; }
+    .rule { border-top: 2px dashed #d7cba2; margin-top: 14px; padding-top: 10px; font-size: 14px; font-weight: 650; }
+    .task { font-size: 26px; font-weight: 900; margin: 8px 0 10px; line-height: 1.2; }
+    .quiz-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0 10px;
+    }
+    .options button {
+      min-height: 70px;
+      padding: 8px 6px;
+      background: #f5f0fa;
+      font-size: clamp(18px, 5.8vw, 26px);
+      line-height: 1.1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .options .opt-unit {
+      display: block;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: none;
+      font-weight: 800;
+      color: #5a4a6e;
+      margin-top: 2px;
+    }
+    .options button.correct { background: #d5f58b; box-shadow: 0 3px var(--ink); }
+    .options button.wrong { background: #ffb4c8; box-shadow: 0 3px var(--ink); }
+    .options button:disabled { transform: none; }
+    .msg { margin-top: 8px; font-weight: 750; min-height: 1.3em; }
+    .quiz-foot { min-height: 96px; flex: none; }
+    #next, #again { width: 100%; margin-top: 8px; }
+    .backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 16, 40, 0.45);
+      z-index: 30;
+    }
+    [hidden] { display: none !important; }
+
+    @media (min-width: 800px) {
+      .wrap { padding: 24px 20px 50px; }
+      .grid { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 20px; }
+      header.hero { padding: 22px 28px; }
+      .mascot { font-size: 64px; }
+      .options button { min-height: 84px; }
+    }
+
+    @media (max-width: 799px) {
+      .stage.is-playing {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        z-index: 40;
+        min-height: 36vh;
+        margin: 0;
+        box-shadow: 0 8px 0 #1c1028;
+      }
+      body.playing .backdrop { display: block; }
+
+      body.mode-quiz { padding-bottom: 0; }
+      body.mode-quiz .hero,
+      body.mode-quiz .ladder,
+      body.mode-quiz #stage:not(.is-playing) { display: none; }
+      body.mode-quiz .wrap {
+        padding: 8px 10px 8px;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      body.mode-quiz nav.tabs { margin: 0 0 8px; flex: none; }
+      body.mode-quiz .grid { flex: 1; min-height: 0; gap: 0; }
+      body.mode-quiz .grid > div { height: 100%; }
+      body.mode-quiz .card.controls {
+        height: 100%;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+      }
+      body.mode-quiz #quiz {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+      body.mode-quiz .heading { margin-bottom: 6px; }
+      body.mode-quiz h2 { font-size: 18px; }
+      body.mode-quiz .task { font-size: 24px; margin: 6px 0 8px; }
+      body.mode-quiz .options {
+        flex: 1;
+        min-height: 0;
+        align-content: center;
+        grid-template-rows: minmax(96px, 120px) minmax(96px, 120px);
+      }
+      body.mode-quiz .options button { height: 100%; min-height: 96px; max-height: 120px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <noscript>
+      <div class="noscript">
+        Żeby korzystać z animacji, otwórz ten plik w przeglądarce Chrome.
+        W telefonie: stuknij plik → „Otwórz za pomocą” → Chrome.
+      </div>
+    </noscript>
+    <div class="boot-error" id="bootError">Coś poszło nie tak przy uruchamianiu. Otwórz plik w Chrome i spróbuj ponownie.</div>
+
+    <header class="hero">
+      <div>
+        <span class="tag">Laboratorium masy</span>
+        <h1>Wagomagia!</h1>
+        <p>Przeliczaj gramy, dekagramy i kilogramy.</p>
+      </div>
+      <div class="mascot" aria-hidden="true">⚖️🍎</div>
+    </header>
+
+    <nav class="tabs" aria-label="Tryb nauki">
+      <button type="button" id="calcTab" aria-pressed="true">⚖️ Przelicz</button>
+      <button type="button" id="quizTab" aria-pressed="false">✏️ Ćwiczenia</button>
+    </nav>
+
+    <div class="grid">
+      <div>
+        <section class="card controls">
+          <form id="calculator" action="#" method="get">
+            <div class="heading"><span class="badge">⇄</span><h2>Przelicz masę</h2></div>
+            <label class="label" for="mass">Ile waży?</label>
+            <input id="mass" type="text" inputmode="decimal" enterkeyhint="go"
+              placeholder="np. 2,5 albo 0,05" autocomplete="off" autocorrect="off"
+              autocapitalize="off" spellcheck="false">
+            <div class="units">
+              <div>
+                <span class="label" id="sourceLabel">Z jednostki</span>
+                <div class="choices" id="from" role="group" aria-labelledby="sourceLabel">
+                  <button type="button" data-unit="g">g</button>
+                  <button type="button" data-unit="dag">dag</button>
+                  <button type="button" data-unit="kg" aria-pressed="true">kg</button>
+                </div>
+              </div>
+              <b class="arrow">→</b>
+              <div>
+                <span class="label" id="destLabel">Na jednostkę</span>
+                <div class="choices" id="to" role="group" aria-labelledby="destLabel">
+                  <button type="button" data-unit="g">g</button>
+                  <button type="button" data-unit="dag" aria-pressed="true">dag</button>
+                  <button type="button" data-unit="kg">kg</button>
+                </div>
+              </div>
+            </div>
+            <button class="go" type="submit" id="pokaz">Pokaż →</button>
+            <p class="hint" id="hint">💡 kg → dag: dopisz 2 zera</p>
+            <p class="live" id="live" role="status"></p>
+            <p class="msg" id="error" role="alert"></p>
+          </form>
+
+          <div id="quiz" hidden>
+            <div class="heading"><span class="badge">✎</span><h2>Ćwicz z wagą</h2></div>
+            <div class="quiz-meta">
+              <span id="stars">⭐ 0</span>
+              <span id="progress">Zadanie 1/10</span>
+            </div>
+            <p class="task" id="question"></p>
+            <div class="options" id="options" role="group" aria-label="Wybierz odpowiedź">
+              <button type="button" data-i="0"><span class="opt-num"></span><span class="opt-unit"></span></button>
+              <button type="button" data-i="1"><span class="opt-num"></span><span class="opt-unit"></span></button>
+              <button type="button" data-i="2"><span class="opt-num"></span><span class="opt-unit"></span></button>
+              <button type="button" data-i="3"><span class="opt-num"></span><span class="opt-unit"></span></button>
+            </div>
+            <div class="quiz-foot">
+            <p class="msg" id="feedback" role="status"></p>
+            <button type="button" class="go" id="next" hidden>Następne</button>
+            <div id="summary" hidden>
+              <p class="task" id="summaryText"></p>
+              <button type="button" class="go" id="again">Jeszcze raz</button>
+            </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="stage" id="stage" aria-label="Animacja przeliczania">
+          <div class="stagehead">
+            <span class="label">✦ Scena cyfr</span>
+            <button type="button" id="skip">Pomiń</button>
+          </div>
+          <div id="idle" class="empty">
+            <span class="spark">✧</span>
+            <div>
+              <strong>Tu dzieje się magia!</strong>
+              <small id="invite">Wpisz liczbę i naciśnij „Pokaż”.</small>
+            </div>
+          </div>
+          <div id="digits" class="digits" hidden></div>
+          <p class="caption" id="caption" role="status"></p>
+        </section>
+      </div>
+
+      <aside class="card ladder" id="ladder">
+        <div class="heading"><span class="badge">↕</span><h2>Drabinka masy</h2></div>
+        <div class="rung" data-unit="kg"><strong class="kg">kg</strong> kilogram</div>
+        <div class="link" data-step="kg-dag"><b>↕</b>2 zera <span>×100 / ÷100</span></div>
+        <div class="rung" data-unit="dag"><strong class="dag">dag</strong> dekagram</div>
+        <div class="link" data-step="dag-g"><b>↕</b>1 zero <span>×10 / ÷10</span></div>
+        <div class="rung" data-unit="g"><strong class="g">g</strong> gram</div>
+        <p class="rule">↓ W dół (mniejsza jednostka) dopisujesz zera albo przesuwasz przecinek w prawo<br>↑ W górę (większa jednostka) przesuwasz przecinek w lewo i stawiasz zera z przodu</p>
+      </aside>
+    </div>
+  </div>
+  <div class="backdrop" id="backdrop" hidden></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var POWERS = { g: 0, dag: 1, kg: 3 };
+    var ROUND = 10;
+    var src = 'kg';
+    var dst = 'dag';
+    var timer = null;
+    var finishFn = null;
+    var score = 0;
+    var qIndex = 0;
+    var roundQs = [];
+    var task = null;
+    var locked = false;
+    var reducedMotion = false;
+
+    var BANK = [
+      ['0,05', 'kg', 'g'], ['0,008', 'kg', 'g'], ['0,02', 'kg', 'g'], ['0,105', 'kg', 'g'],
+      ['2,05', 'kg', 'g'], ['1,008', 'kg', 'g'], ['0,5', 'kg', 'g'], ['0,003', 'kg', 'g'],
+      ['3,05', 'kg', 'g'], ['0,015', 'kg', 'g'], ['0,007', 'kg', 'g'], ['1,05', 'kg', 'g'],
+      ['0,2', 'kg', 'g'], ['0,08', 'kg', 'g'], ['0,001', 'kg', 'g'],
+      ['5', 'g', 'kg'], ['40', 'g', 'kg'], ['3005', 'g', 'kg'], ['7', 'g', 'kg'],
+      ['8', 'g', 'kg'], ['20', 'g', 'kg'], ['50', 'g', 'kg'], ['105', 'g', 'kg'],
+      ['3', 'g', 'kg'], ['15', 'g', 'kg'], ['250', 'g', 'kg'], ['4', 'g', 'kg'],
+      ['1005', 'g', 'kg'], ['30', 'g', 'kg'], ['9', 'g', 'kg'], ['200', 'g', 'kg'],
+      ['0,05', 'kg', 'dag'], ['0,5', 'kg', 'dag'], ['0,08', 'kg', 'dag'], ['0,12', 'kg', 'dag'],
+      ['2,05', 'kg', 'dag'], ['0,03', 'kg', 'dag'], ['1,5', 'kg', 'dag'], ['0,007', 'kg', 'dag'],
+      ['0,015', 'kg', 'dag'], ['0,2', 'kg', 'dag'], ['3', 'kg', 'dag'],
+      ['3', 'dag', 'kg'], ['5', 'dag', 'kg'], ['7', 'dag', 'kg'], ['20', 'dag', 'kg'],
+      ['50', 'dag', 'kg'], ['8', 'dag', 'kg'], ['12', 'dag', 'kg'], ['0,5', 'dag', 'kg'],
+      ['1,5', 'dag', 'kg'], ['0,7', 'dag', 'kg'], ['40', 'dag', 'kg'], ['2', 'dag', 'kg'],
+      ['0,5', 'dag', 'g'], ['0,8', 'dag', 'g'], ['2,5', 'dag', 'g'], ['12', 'dag', 'g'],
+      ['3,5', 'dag', 'g'], ['0,2', 'dag', 'g'], ['7', 'dag', 'g'], ['0,05', 'dag', 'g'],
+      ['7', 'g', 'dag'], ['5', 'g', 'dag'], ['3', 'g', 'dag'], ['125', 'g', 'dag'],
+      ['40', 'g', 'dag'], ['8', 'g', 'dag'], ['15', 'g', 'dag'], ['2', 'g', 'dag'],
+      ['250', 'g', 'dag'], ['4', 'g', 'dag'], ['9', 'g', 'dag'], ['35', 'g', 'dag']
+    ];
+
+    try {
+      reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e1) {}
+
+    function $(id) { return document.getElementById(id); }
+
+    function clearEl(el) {
+      while (el && el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function lastOf(arr) { return arr[arr.length - 1]; }
+
+    function clean(s) {
+      return String(s)
+        .replace(/^0+(?=\d)/, '')
+        .replace(/(,\d*?)0+$/, '$1')
+        .replace(/,$/, '');
+    }
+
+    function parse(s) {
+      s = String(s || '').replace(/\s/g, '').replace(/\./g, ',');
+      if (!/^(?:\d+(?:,\d*)?|,\d+)$/.test(s)) return null;
+      return clean(s.replace(/^,/, '0,'));
+    }
+
+    function convertPlaces(value, n) {
+      var parts = String(value).split(',');
+      var left = parts[0];
+      var right = parts.length > 1 ? parts[1] : '';
+      var i, s;
+      for (i = 0; i < Math.abs(n); i++) {
+        if (n > 0) {
+          left = (left + (right.charAt(0) || '0')).replace(/^0+(?=\d)/, '');
+          right = right.slice(1);
+        } else if (n < 0) {
+          right = left.slice(-1) + right;
+          left = left.slice(0, -1) || '0';
+        }
+      }
+      s = left + (right ? ',' + right : '');
+      return clean(s);
+    }
+
+    function frames(value, a, b) {
+      var n = POWERS[a] - POWERS[b];
+      var parts = String(value).split(',');
+      var left = parts[0];
+      var right = parts.length > 1 ? parts[1] : '';
+      var steps = [value];
+      var i, last, s;
+      for (i = 0; i < Math.abs(n); i++) {
+        if (n > 0) {
+          left = (left + (right.charAt(0) || '0')).replace(/^0+(?=\d)/, '');
+          right = right.slice(1);
+        } else {
+          right = left.slice(-1) + right;
+          left = left.slice(0, -1) || '0';
+        }
+        s = left + (right ? ',' + right : '');
+        steps.push(s);
+      }
+      last = clean(lastOf(steps));
+      if (last !== lastOf(steps)) steps.push(last);
+      return steps;
+    }
+
+    function tip(v, a, b) {
+      var d = POWERS[a] - POWERS[b];
+      var n = Math.abs(d);
+      if (!d) return 'Ta sama jednostka — liczba się nie zmienia.';
+      var head = a + ' → ' + b + ': ';
+      if (d > 0 && String(v).indexOf(',') === -1) {
+        return head + 'dopisz ' + n + (n === 1 ? ' zero' : ' zera');
+      }
+      return head + 'przesuń przecinek o ' + n + (n === 1 ? ' miejsce' : ' miejsca') + ' w ' + (d > 0 ? 'prawo' : 'lewo');
+    }
+
+    function kidSized(s) {
+      if (!s) return false;
+      var raw = String(s).replace(',', '');
+      if (raw.length > 6) return false;
+      var parts = String(s).split(',');
+      if (parts[1] && parts[1].length > 4) return false;
+      if (s === '0') return false;
+      return true;
+    }
+
+    function shuffle(arr) {
+      var a = arr.slice();
+      var i, j, t;
+      for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    function pushUniq(list, v, correct) {
+      var p = parse(String(v));
+      var i;
+      if (p == null || p === correct || !kidSized(p)) return;
+      for (i = 0; i < list.length; i++) if (list[i] === p) return;
+      list.push(p);
+    }
+
+    function makeOptions(value, a, b) {
+      var correct = lastOf(frames(value, a, b));
+      var n = POWERS[a] - POWERS[b];
+      var cands = [];
+      var shifts = [n - 1, n + 1, n - 2, n + 2, -n, n > 0 ? 2 : -2, n > 0 ? 1 : -1, n > 0 ? 3 : -3, n > 0 ? 4 : -4];
+      var i, ch;
+      for (i = 0; i < shifts.length; i++) {
+        if (shifts[i] !== 0 && shifts[i] !== n) pushUniq(cands, convertPlaces(value, shifts[i]), correct);
+      }
+      pushUniq(cands, convertPlaces(correct, 1), correct);
+      pushUniq(cands, convertPlaces(correct, -1), correct);
+      pushUniq(cands, convertPlaces(correct, 2), correct);
+      pushUniq(cands, convertPlaces(correct, -2), correct);
+      pushUniq(cands, convertPlaces(correct, 3), correct);
+      pushUniq(cands, convertPlaces(correct, -3), correct);
+      pushUniq(cands, String(correct).replace(',', ''), correct);
+      pushUniq(cands, correct + '0', correct);
+      pushUniq(cands, value, correct);
+      if (correct.indexOf('0,') === 0) {
+        pushUniq(cands, clean(correct.slice(2)), correct);
+        ch = correct.slice(2);
+        if (ch.charAt(0) === '0') pushUniq(cands, '0,' + ch.slice(1), correct);
+      }
+      if (cands.length < 3) {
+        pushUniq(cands, convertPlaces(value, n + 3), correct);
+        pushUniq(cands, convertPlaces(value, n - 3), correct);
+        pushUniq(cands, '10', correct);
+        pushUniq(cands, '100', correct);
+        pushUniq(cands, '0,1', correct);
+        pushUniq(cands, '0,01', correct);
+        pushUniq(cands, '0,001', correct);
+      }
+      if (cands.length < 3) return null;
+      var picked = shuffle(cands).slice(0, 3);
+      var opts = shuffle(picked.concat([correct]));
+      return { value: value, from: a, to: b, correct: correct, options: opts };
+    }
+
+    function buildQuestion(item) {
+      var q = makeOptions(item[0], item[1], item[2]);
+      if (!q) return null;
+      return q;
+    }
+
+    function blurActive() {
+      try {
+        var el = document.activeElement;
+        if (el && el.blur) el.blur();
+      } catch (e2) {}
+    }
+
+    function setPlaying(on) {
+      var stage = $('stage');
+      var back = $('backdrop');
+      if (on) {
+        stage.className = 'stage is-playing';
+        document.body.className = (document.body.className.replace(/\bplaying\b/g, '') + ' playing').replace(/\s+/g, ' ');
+        back.removeAttribute('hidden');
+        back.style.display = '';
+      } else {
+        stage.className = 'stage';
+        document.body.className = document.body.className.replace(/\bplaying\b/g, '').replace(/\s+/g, ' ');
+        back.setAttribute('hidden', '');
+        back.style.display = 'none';
+      }
+    }
+
+    function resetStage() {
+      if (timer) { clearTimeout(timer); timer = null; }
+      finishFn = null;
+      $('skip').className = '';
+      $('skip').textContent = 'Pomiń';
+      $('digits').hidden = true;
+      $('idle').hidden = false;
+      $('caption').textContent = '';
+      setPlaying(false);
+    }
+
+    function markLadder(a, b) {
+      var rungs = document.querySelectorAll('.rung, .link');
+      var i;
+      for (i = 0; i < rungs.length; i++) rungs[i].className = rungs[i].className.replace(/\bis-active\b/g, '').replace(/\s+/g, ' ');
+      if (!a || !b || a === b) return;
+      var order = { kg: 3, dag: 1, g: 0 };
+      var hi = order[a] > order[b] ? a : b;
+      var lo = order[a] > order[b] ? b : a;
+      var units = ['kg', 'dag', 'g'];
+      for (i = 0; i < units.length; i++) {
+        if (order[units[i]] <= order[hi] && order[units[i]] >= order[lo]) {
+          var rung = document.querySelector('.rung[data-unit="' + units[i] + '"]');
+          if (rung) rung.className += ' is-active';
+        }
+      }
+      if (hi === 'kg') {
+        var l1 = document.querySelector('.link[data-step="kg-dag"]');
+        if (l1) l1.className += ' is-active';
+      }
+      if (lo === 'g' && (hi === 'dag' || hi === 'kg')) {
+        var l2 = document.querySelector('.link[data-step="dag-g"]');
+        if (l2) l2.className += ' is-active';
+      }
+    }
+
+    function syncUnitButtons() {
+      var groups = [
+        { id: 'from', cur: src },
+        { id: 'to', cur: dst }
+      ];
+      var g, buttons, i, u;
+      for (g = 0; g < groups.length; g++) {
+        buttons = $(groups[g].id).getElementsByTagName('button');
+        for (i = 0; i < buttons.length; i++) {
+          u = buttons[i].getAttribute('data-unit');
+          if (u === groups[g].cur) buttons[i].setAttribute('aria-pressed', 'true');
+          else buttons[i].setAttribute('aria-pressed', 'false');
+        }
+      }
+      var sample = parse($('mass').value) || '3';
+      $('hint').textContent = '💡 ' + tip(sample, src, dst);
+      markLadder(src, dst);
+    }
+
+    function normalizeField(el) {
+      var v = el.value;
+      var start = el.selectionStart;
+      var end = el.selectionEnd;
+      if (v.indexOf('.') === -1) return;
+      el.value = v.replace(/\./g, ',');
+      try {
+        if (typeof start === 'number' && el.setSelectionRange) el.setSelectionRange(start, end);
+      } catch (e3) {}
+    }
+
+    function fracLeadZeros(str) {
+      var i = str.indexOf(',');
+      var n = 0;
+      if (i < 0) return 0;
+      for (i = i + 1; i < str.length && str.charAt(i) === '0'; i++) n += 1;
+      return n;
+    }
+
+    function freshIndices(s, prev) {
+      var mark = {};
+      var i, comma;
+      if (!prev) return mark;
+      if (s.indexOf('0,') === 0 && prev.indexOf('0,') !== 0) {
+        mark[0] = true;
+        mark[1] = true;
+      }
+      if (fracLeadZeros(s) > fracLeadZeros(prev) && s.indexOf(',') >= 0) {
+        mark[s.indexOf(',') + 1] = true;
+      }
+      if (s.length > prev.length && s.charAt(s.length - 1) === '0') {
+        if (s.replace(',', '').indexOf(prev.replace(',', '')) === 0) mark[s.length - 1] = true;
+      }
+      comma = s.indexOf(',');
+      if (comma >= 0 && prev.indexOf(',') < 0) mark[comma] = true;
+      return mark;
+    }
+
+    function paintDigits(s, prev) {
+      var box = $('digits');
+      var fresh = freshIndices(s, prev);
+      var i, c, el;
+      clearEl(box);
+      for (i = 0; i < s.length; i++) {
+        c = s.charAt(i);
+        el = document.createElement('span');
+        el.className = c === ',' ? 'comma' : 'tile';
+        if (fresh[i]) {
+          el.className += ' pop';
+          if (c === '0') el.className += ' fresh';
+        }
+        el.appendChild(document.createTextNode(c));
+        box.appendChild(el);
+      }
+    }
+
+    function stepCaption(seq, i, v, a, b, prev, s) {
+      if (i === 0) return tip(v, a, b);
+      if (i > 0 && s === clean(seq[i - 1]) && seq[i - 1] !== s) return 'Zbędne zera znikają.';
+      if (s.indexOf('0,') === 0 && prev.indexOf('0,') !== 0) return 'Przed liczbą stawiamy zero i przecinek.';
+      if (fracLeadZeros(s) > fracLeadZeros(prev)) return 'Zero wskakuje po przecinku, przed cyframi.';
+      if (POWERS[a] > POWERS[b] && s.length > prev.length && s.charAt(s.length - 1) === '0' && String(v).indexOf(',') === -1) {
+        return 'Dopisujemy zero.';
+      }
+      if (POWERS[a] > POWERS[b] && s.length > String(prev).replace(',', '').length) return 'Dopisujemy zero.';
+      return 'Przecinek skacze w ' + (POWERS[a] > POWERS[b] ? 'prawo' : 'lewo') + ' · krok ' + i;
+    }
+
+    function animate(v, a, b, done, endPhrase) {
+      resetStage();
+      var seq = frames(v, a, b);
+      var i = 0;
+      var prev = '';
+      $('idle').hidden = true;
+      $('digits').hidden = false;
+      $('skip').className = 'is-on';
+      $('skip').textContent = 'Pomiń';
+      setPlaying(true);
+      markLadder(a, b);
+      blurActive();
+
+      function showFinal() {
+        if (timer) { clearTimeout(timer); timer = null; }
+        var res = lastOf(seq);
+        paintDigits(res, prev);
+        $('caption').textContent = res + ' ' + b + '  ·  ' + (endPhrase || 'Brawo!');
+        if ($('live') && !$('calculator').hidden) $('live').textContent = res + ' ' + b;
+        $('skip').textContent = 'Zamknij';
+        $('skip').className = 'is-on';
+        finishFn = null;
+        if (done) done(res);
+      }
+
+      finishFn = showFinal;
+
+      function step() {
+        var s = seq[i];
+        paintDigits(s, prev);
+        $('caption').textContent = stepCaption(seq, i, v, a, b, prev, s);
+        prev = s;
+        i += 1;
+        if (i >= seq.length) {
+          timer = setTimeout(showFinal, reducedMotion ? 0 : 650);
+        } else {
+          timer = setTimeout(step, reducedMotion ? 0 : 650);
+        }
+      }
+
+      step();
+      try {
+        $('stage').scrollIntoView({ block: 'center' });
+      } catch (e4) {
+        try { $('stage').scrollIntoView(true); } catch (e5) {}
+      }
+    }
+
+    function onCalcSubmit(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (e) e.returnValue = false;
+      $('error').textContent = '';
+      $('live').textContent = '';
+      var v = parse($('mass').value);
+      if (v === null) {
+        resetStage();
+        $('error').textContent = 'Wpisz liczbę, np. 3, 2,5 albo 0,05.';
+        return false;
+      }
+      $('mass').value = v;
+      syncUnitButtons();
+      if (src === dst) {
+        resetStage();
+        $('error').textContent = 'Tak jest! ' + v + ' ' + src + ' to nadal ' + v + ' ' + dst + '.';
+        $('live').textContent = v + ' ' + dst;
+        return false;
+      }
+      animate(v, src, dst, null, 'Brawo!');
+      return false;
+    }
+
+    function startRound() {
+      var bag = shuffle(BANK);
+      var list = [];
+      var i, q, key, used = {};
+      for (i = 0; i < bag.length && list.length < ROUND; i++) {
+        key = bag[i][0] + '|' + bag[i][1] + '|' + bag[i][2];
+        if (used[key]) continue;
+        q = buildQuestion(bag[i]);
+        if (!q) continue;
+        used[key] = true;
+        list.push(q);
+      }
+      roundQs = list;
+      qIndex = 0;
+      score = 0;
+      showTask();
+    }
+
+    function renderOptions(q, unlock) {
+      var btns = $('options').getElementsByTagName('button');
+      var i, num, unit;
+      for (i = 0; i < 4; i++) {
+        num = btns[i].querySelector('.opt-num');
+        unit = btns[i].querySelector('.opt-unit');
+        num.textContent = q.options[i];
+        unit.textContent = q.to;
+        btns[i].className = '';
+        btns[i].disabled = !unlock;
+        btns[i].setAttribute('aria-label', q.options[i] + ' ' + q.to);
+      }
+    }
+
+    function showTask() {
+      resetStage();
+      $('summary').hidden = true;
+      $('options').hidden = false;
+      $('question').hidden = false;
+      $('next').hidden = true;
+      $('feedback').textContent = '';
+      locked = false;
+      task = roundQs[qIndex];
+      $('stars').textContent = '⭐ ' + score;
+      $('progress').textContent = 'Zadanie ' + (qIndex + 1) + '/' + roundQs.length;
+      $('question').textContent = task.value + ' ' + task.from + '  =  ?  ' + task.to;
+      renderOptions(task, true);
+      markLadder(task.from, task.to);
+    }
+
+    function showSummary() {
+      resetStage();
+      $('options').hidden = true;
+      $('question').hidden = true;
+      $('next').hidden = true;
+      $('feedback').textContent = '';
+      $('summary').hidden = false;
+      $('progress').textContent = 'Koniec rundy';
+      $('stars').textContent = '⭐ ' + score;
+      $('summaryText').textContent = 'Koniec! Masz ' + score + '/' + roundQs.length + ' gwiazdek.';
+    }
+
+    function onPick(ev) {
+      var btn = ev.currentTarget;
+      var choice, i, btns, ok;
+      if (locked || !task) return;
+      choice = task.options[+btn.getAttribute('data-i')];
+      locked = true;
+      btns = $('options').getElementsByTagName('button');
+      for (i = 0; i < btns.length; i++) {
+        btns[i].disabled = true;
+        if (task.options[i] === task.correct) btns[i].className = 'correct';
+      }
+      ok = choice === task.correct;
+      if (ok) {
+        score += 1;
+        $('stars').textContent = '⭐ ' + score;
+        $('feedback').textContent = 'Super! ⭐ Zobacz, jak to zrobić.';
+        animate(task.value, task.from, task.to, null, 'Super!');
+      } else {
+        btn.className = 'wrong';
+        $('feedback').textContent = 'Prawie! Zobacz, jak to zrobić.';
+        animate(task.value, task.from, task.to, null, 'Tak się to robi!');
+      }
+      if (qIndex + 1 >= roundQs.length) {
+        $('next').textContent = 'Zobacz wynik';
+      } else {
+        $('next').textContent = 'Następne';
+      }
+      $('next').hidden = false;
+    }
+
+    function onNext() {
+      if (qIndex + 1 >= roundQs.length) showSummary();
+      else {
+        qIndex += 1;
+        showTask();
+      }
+    }
+
+    function setMode(quiz) {
+      resetStage();
+      $('live').textContent = '';
+      $('calculator').hidden = !!quiz;
+      $('quiz').hidden = !quiz;
+      $('calcTab').setAttribute('aria-pressed', quiz ? 'false' : 'true');
+      $('quizTab').setAttribute('aria-pressed', quiz ? 'true' : 'false');
+      document.body.className = document.body.className.replace(/\bmode-quiz\b/g, '').replace(/\s+/g, ' ');
+      if (quiz) {
+        document.body.className += ' mode-quiz';
+        $('invite').textContent = 'Wybierz odpowiedź. Po pomyłce pokażę, jak to zrobić.';
+        startRound();
+      } else {
+        $('invite').textContent = 'Wpisz liczbę i naciśnij „Pokaż”.';
+        syncUnitButtons();
+      }
+    }
+
+    function bindUnitGroup(id, setter) {
+      $(id).addEventListener('click', function (ev) {
+        var t = ev.target;
+        while (t && t !== $(id) && (!t.getAttribute || !t.getAttribute('data-unit'))) t = t.parentNode;
+        if (!t || t === $(id)) return;
+        setter(t.getAttribute('data-unit'));
+        $('error').textContent = '';
+        $('live').textContent = '';
+        syncUnitButtons();
+      });
+    }
+
+    function closeSheet() {
+      if (finishFn) finishFn();
+      else setPlaying(false);
+    }
+
+    bindUnitGroup('from', function (u) { src = u; });
+    bindUnitGroup('to', function (u) { dst = u; });
+
+    $('mass').addEventListener('input', function () {
+      normalizeField($('mass'));
+      $('error').textContent = '';
+      syncUnitButtons();
+    });
+
+    $('calculator').addEventListener('submit', onCalcSubmit);
+    $('next').addEventListener('click', onNext);
+    $('again').addEventListener('click', startRound);
+    $('skip').addEventListener('click', closeSheet);
+    $('backdrop').addEventListener('click', closeSheet);
+    $('calcTab').addEventListener('click', function () { setMode(false); });
+    $('quizTab').addEventListener('click', function () { setMode(true); });
+
+    (function bindOptions() {
+      var btns = $('options').getElementsByTagName('button');
+      var i;
+      for (i = 0; i < btns.length; i++) btns[i].addEventListener('click', onPick);
+    })();
+
+    $('mass').addEventListener('focus', function () {
+      try { $('mass').scrollIntoView({ block: 'center' }); } catch (e6) {}
+    });
+
+    syncUnitButtons();
+
+    window.Wagomagia = {
+      frames: frames,
+      parse: parse,
+      clean: clean,
+      convertPlaces: convertPlaces,
+      makeOptions: makeOptions,
+      buildQuestion: buildQuestion,
+      tip: tip,
+      BANK: BANK,
+      POWERS: POWERS
+    };
+  })();
+  </script>
+</body>
+</html>
